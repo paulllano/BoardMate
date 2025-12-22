@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('boarders', function (Blueprint $table) {
+            if (Schema::hasColumn('boarders', 'age')) {
+                $table->integer('age')->nullable()->change();
+            }
+            if (Schema::hasColumn('boarders', 'contact')) {
+                $table->string('contact')->nullable()->change();
+            }
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('boarders', function (Blueprint $table) {
+            if (Schema::hasColumn('boarders', 'age')) {
+                $table->integer('age')->nullable(false)->change();
+            }
+            if (Schema::hasColumn('boarders', 'contact')) {
+                $table->string('contact')->nullable(false)->change();
+            }
+        });
+    }
+};
+
+
