@@ -41,7 +41,7 @@ A comprehensive web application for managing boarding houses, boarders, contract
 
 ### 1. Clone the repository
 ```bash
-git clone [your-repo-url]
+git clone (https://github.com/paulllano/BoardMate.git)
 cd BOARDMATE\ \(REAL\)
 ```
 
@@ -263,7 +263,7 @@ This project is open-sourced software licensed under the [MIT license](https://o
 
 ## 👤 Author
 
-[Your Name]
+Paul Matthew F. Llano
 
 ## 🙏 Acknowledgments
 
