@@ -16,13 +16,19 @@ class Application extends Model
         'reviewed_at',
         'transfer_approved_by_previous_admin',
         'transfer_approved_at',
-        'transfer_rejected_at'
+        'transfer_rejected_at',
+        'advance_payment_id',
+        'policies_accepted',
+        'policies_accepted_at',
+        'policies_text'
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
         'transfer_approved_at' => 'datetime',
         'transfer_rejected_at' => 'datetime',
+        'policies_accepted' => 'boolean',
+        'policies_accepted_at' => 'datetime',
     ];
 
     public function boarder()
@@ -43,6 +49,11 @@ class Application extends Model
     public function transferApprovedBy()
     {
         return $this->belongsTo(Admin::class, 'transfer_approved_by_previous_admin');
+    }
+
+    public function advancePayment()
+    {
+        return $this->belongsTo(Payment::class, 'advance_payment_id');
     }
 
     public function scopePending($query)

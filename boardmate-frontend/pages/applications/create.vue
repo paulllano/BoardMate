@@ -61,9 +61,92 @@
               </div>
             </div>
 
+            <!-- Advance Payment Section -->
+            <div v-if="boardingHouse && boardingHouse.advance_payment_amount > 0" class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <h6 class="text-sm font-semibold text-gray-700 mb-3">
+                <i class="fas fa-money-bill-wave mr-2 text-blue-600"></i>
+                Advance Payment Required
+              </h6>
+              <div class="mb-4">
+                <p class="text-gray-700 mb-3">
+                  <strong>Amount:</strong> <span class="text-lg font-bold text-blue-600">₱{{ formatCurrency(boardingHouse.advance_payment_amount) }}</span>
+                </p>
+                <p class="text-sm text-gray-600 mb-3">
+                  This advance payment serves as a reservation fee and will be used as credit toward your first month's rent when your contract is created.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      <i class="fas fa-credit-card mr-2 text-blue-600"></i>
+                      Payment Method <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                      v-model="form.advance_payment_method"
+                      required
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Select payment method</option>
+                      <option value="Cash">Cash</option>
+                      <option value="GCash">GCash</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      <i class="fas fa-hashtag mr-2 text-blue-600"></i>
+                      Reference Number
+                      <span v-if="form.advance_payment_method === 'GCash'" class="text-red-500">*</span>
+                    </label>
+                    <input
+                      v-model="form.advance_payment_reference"
+                      type="text"
+                      :required="form.advance_payment_method === 'GCash'"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="Enter reference number"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">
+                      <span v-if="form.advance_payment_method === 'GCash'">Required for GCash payments</span>
+                      <span v-else>Optional for Cash payments</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Policies Section -->
+            <div v-if="boardingHouse" class="border-2 border-gray-300 rounded-lg p-4">
+              <h6 class="text-sm font-semibold text-gray-700 mb-3">
+                <i class="fas fa-file-contract mr-2 text-green-600"></i>
+                House Policies & Terms <span class="text-red-500">*</span>
+              </h6>
+              <div v-if="boardingHouse.policies" class="bg-gray-50 border border-gray-200 rounded p-4 max-h-64 overflow-y-auto mb-4">
+                <pre class="text-sm text-gray-700 whitespace-pre-wrap font-sans">{{ boardingHouse.policies }}</pre>
+              </div>
+              <div v-else class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4">
+                <p class="text-sm text-yellow-800">
+                  <i class="fas fa-info-circle mr-2"></i>
+                  No specific policies have been set for this boarding house. By submitting this application, you agree to follow standard boarding house rules and regulations.
+                </p>
+              </div>
+              <div class="flex items-start">
+                <input
+                  id="policies_accepted"
+                  v-model="form.policies_accepted"
+                  type="checkbox"
+                  required
+                  class="mt-1 mr-2 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <label for="policies_accepted" class="text-sm text-gray-700">
+                  I have read and accept the policies and terms & conditions stated above. <span class="text-red-500">*</span>
+                </label>
+              </div>
+            </div>
+
             <!-- Message -->
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-comment mr-2 text-green-600"></i>
                 Message to Property Owner (Optional)
               </label>
               <textarea
@@ -85,6 +168,9 @@
                   <strong class="text-blue-800">Note:</strong>
                   <p class="text-blue-700 text-sm mt-1">
                     Your application will be reviewed by the property owner. You will be notified of the decision via email.
+                    <span v-if="boardingHouse && boardingHouse.advance_payment_amount > 0">
+                      If your application is rejected, your advance payment will be automatically refunded.
+                    </span>
                   </p>
                 </div>
               </div>
@@ -101,12 +187,12 @@
               </NuxtLink>
               <button
                 type="submit"
-                :disabled="loading || !boardingHouse"
+                :disabled="loading || submitting || !boardingHouse || (boardingHouse && boardingHouse.advance_payment_amount > 0 && !form.advance_payment_method) || !form.policies_accepted"
                 class="bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-200 flex items-center ml-auto"
               >
-                <i v-if="!loading" class="fas fa-paper-plane mr-2"></i>
+                <i v-if="!submitting" class="fas fa-paper-plane mr-2"></i>
                 <i v-else class="fas fa-spinner fa-spin mr-2"></i>
-                {{ loading ? 'Submitting...' : 'Submit Application' }}
+                {{ submitting ? 'Submitting...' : 'Submit Application' }}
               </button>
             </div>
           </form>
@@ -171,7 +257,11 @@ const submitting = ref(false)
 const error = ref('')
 
 const form = ref({
-  message: ''
+  message: '',
+  advance_payment_method: '',
+  advance_payment_reference: '',
+  advance_payment_amount: 0,
+  policies_accepted: false
 })
 
 onMounted(async () => {
@@ -198,29 +288,87 @@ onMounted(async () => {
     error.value = 'No boarding house specified'
     loading.value = false
   }
+  
+  // Set advance payment amount when boarding house is loaded
+  watch(() => boardingHouse.value, (house) => {
+    if (house && house.advance_payment_amount) {
+      form.value.advance_payment_amount = house.advance_payment_amount
+    }
+  })
 })
 
 const fetchBoardingHouse = async (id) => {
   loading.value = true
   try {
-    boardingHouse.value = await api.get(`/boarding-houses/${id}`)
+    const response = await api.get(`/boarding-houses/${id}/view`)
+    // Handle different response formats
+    boardingHouse.value = response?.data || response
+    // Set advance payment amount in form
+    if (boardingHouse.value && boardingHouse.value.advance_payment_amount) {
+      form.value.advance_payment_amount = boardingHouse.value.advance_payment_amount
+    }
   } catch (err) {
-    error.value = 'Failed to load boarding house information.'
-    console.error(err)
+    // Try regular show endpoint if view fails
+    try {
+      const response = await api.get(`/boarding-houses/${id}`)
+      boardingHouse.value = response?.data || response
+      if (boardingHouse.value && boardingHouse.value.advance_payment_amount) {
+        form.value.advance_payment_amount = boardingHouse.value.advance_payment_amount
+      }
+    } catch (err2) {
+      error.value = 'Failed to load boarding house information.'
+      console.error(err2)
+    }
   } finally {
     loading.value = false
   }
+}
+
+const formatCurrency = (amount) => {
+  if (!amount) return '0.00'
+  return parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 const handleSubmit = async () => {
   submitting.value = true
   error.value = ''
   
+  // Validate advance payment if required
+  if (boardingHouse.value && boardingHouse.value.advance_payment_amount > 0) {
+    if (!form.value.advance_payment_method) {
+      error.value = 'Please select a payment method for the advance payment.'
+      submitting.value = false
+      return
+    }
+    if (form.value.advance_payment_method === 'GCash' && !form.value.advance_payment_reference) {
+      error.value = 'Please enter a reference number for GCash payment.'
+      submitting.value = false
+      return
+    }
+  }
+  
+  // Validate policies acceptance
+  if (!form.value.policies_accepted) {
+    error.value = 'You must accept the policies and terms & conditions to submit your application.'
+    submitting.value = false
+    return
+  }
+  
   try {
-    const response = await api.post(`/applications`, {
+    const payload = {
       boarding_house_id: boardingHouse.value.id,
-      message: form.value.message
-    })
+      message: form.value.message,
+      policies_accepted: form.value.policies_accepted
+    }
+    
+    // Add advance payment info if required
+    if (boardingHouse.value && boardingHouse.value.advance_payment_amount > 0) {
+      payload.advance_payment_method = form.value.advance_payment_method
+      payload.advance_payment_reference = form.value.advance_payment_reference || null
+      payload.advance_payment_amount = form.value.advance_payment_amount
+    }
+    
+    const response = await api.post(`/applications`, payload)
     
     // Update current boarding house if transfer info is provided
     if (response.is_transfer && response.current_boarding_house) {

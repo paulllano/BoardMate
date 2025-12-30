@@ -13,7 +13,7 @@
           to="/contracts/create"
           class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center hover:-translate-y-0.5 hover:shadow-lg"
         >
-          <i class="fas fa-plus mr-2"></i>Add New Contract
+          <i class="fas fa-file-contract mr-2"></i>Add New Contract
         </NuxtLink>
         <button
           @click="showDeletedModal = true"

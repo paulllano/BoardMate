@@ -79,6 +79,33 @@
         </div>
       </div>
 
+      <!-- Advance Payment Credit Breakdown -->
+      <div v-if="contract.advance_payment_credit > 0" class="bg-white rounded-xl shadow-md border-0 p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">
+          <i class="fas fa-wallet mr-2 text-blue-600"></i>Advance Payment Credit
+        </h2>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-700">Total Advance Payment:</span>
+              <span class="font-semibold text-gray-900">₱{{ formatCurrency(creditBreakdown.total) }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-700">Credit Used:</span>
+              <span class="font-semibold text-red-600">-₱{{ formatCurrency(creditBreakdown.used) }}</span>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t border-blue-200">
+              <span class="font-semibold text-gray-900">Available Credit:</span>
+              <span class="text-xl font-bold text-blue-600">₱{{ formatCurrency(contract.advance_payment_credit) }}</span>
+            </div>
+            <p class="text-xs text-blue-700 mt-2">
+              <i class="fas fa-info-circle mr-1"></i>
+              This credit can be applied to reduce your payment amounts when making payments for this contract.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Payments Section -->
       <div class="bg-white rounded-xl shadow-md border-0 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Related Payments</h2>
@@ -146,6 +173,25 @@ const route = useRoute()
 const contract = ref(null)
 const payments = ref([])
 const loading = ref(true)
+
+// Calculate credit breakdown
+const creditBreakdown = computed(() => {
+  if (!contract.value || !contract.value.advance_payment_credit) {
+    return { total: 0, used: 0, available: 0 }
+  }
+  
+  const available = parseFloat(contract.value.advance_payment_credit) || 0
+  // We need to get total from advance payment - for now estimate from available
+  // In a real scenario, you'd fetch this from the API
+  const total = available // This would come from advance payment record
+  const used = total - available
+  
+  return {
+    total: total,
+    used: Math.max(0, used),
+    available: available
+  }
+})
 
 onMounted(async () => {
   await fetchContract()

@@ -29,6 +29,7 @@ class BoarderSeeder extends Seeder
             'contact' => '09999999999',
             'date_of_birth' => '2003-01-01',
             'address' => 'Sample Address',
+            'gender' => 'male',
             'password' => bcrypt('password'),
             'created_at' => now(),
             'updated_at' => now(),
@@ -45,6 +46,7 @@ class BoarderSeeder extends Seeder
                 'contact' => fake()->phoneNumber(),
                 'date_of_birth' => fake()->date('Y-m-d', '-18 years'), // At least 18 years old
                 'address' => fake()->streetAddress() . ', ' . fake()->city(),
+                'gender' => fake()->randomElement(['male', 'female', 'other']),
                 'password' => bcrypt('password'),
                 'created_at' => now(),
                 'updated_at' => now(),

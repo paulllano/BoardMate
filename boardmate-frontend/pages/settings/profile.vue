@@ -1,65 +1,101 @@
 <template>
-  <div class="container py-4" style="max-width: 720px;">
-    <h1 class="text-xl font-semibold mb-4">Profile</h1>
+  <div class="container py-6" style="max-width: 800px;">
+    <!-- Header Section -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 mb-1">
+        <i class="fas fa-user-gear mr-2" :class="isAdmin ? 'text-blue-600' : 'text-green-600'"></i>
+        Profile Settings
+      </h1>
+      <p class="text-gray-500 text-sm">Update your account information</p>
+    </div>
 
-    <div class="bg-white rounded-2xl shadow-lg border-0 overflow-hidden">
+    <!-- Form Section -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
       <div class="p-6">
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div v-if="error" class="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded">
-            {{ error }}
+        <form @submit.prevent="handleSubmit" class="space-y-5">
+          <div v-if="error" class="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded flex items-start text-sm">
+            <i class="fas fa-exclamation-circle mr-2 mt-0.5"></i>
+            <span>{{ error }}</span>
           </div>
 
+          <!-- Personal Information -->
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                  Name
+                </label>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm"
+                  placeholder="Enter your name"
+                />
+              </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Name</label>
-              <input
-                v-model="form.name"
-                type="text"
-                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              />
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                  Email
+                </label>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  required
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm"
+                  placeholder="Enter your email"
+                />
+              </div>
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-              <input
-                v-model="form.email"
-                type="email"
-                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                Phone
+              </label>
               <input
                 v-model="form.phone"
                 type="text"
-                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
-              <input
-                v-model="form.password"
-                type="password"
-                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                placeholder="Leave blank to keep current password"
+                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm"
+                placeholder="Enter your phone number"
               />
             </div>
           </div>
 
-          <div class="pt-4">
+          <!-- Password Section -->
+          <div class="pt-4 border-t border-gray-200">
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+              New Password
+            </label>
+            <input
+              v-model="form.password"
+              type="password"
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm"
+              placeholder="Leave blank to keep current password"
+            />
+            <p class="text-xs text-gray-500 mt-1.5">
+              Leave blank if you don't want to change your password
+            </p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-3 pt-4">
             <button
               type="submit"
               :disabled="loading"
-              class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 disabled:opacity-50 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md transition duration-200 flex items-center hover:-translate-y-0.5 hover:shadow-lg"
+              class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center text-sm"
             >
               <i v-if="!loading" class="fas fa-save mr-2"></i>
               <i v-else class="fas fa-spinner fa-spin mr-2"></i>
-              {{ loading ? 'Saving...' : 'Save' }}
+              {{ loading ? 'Saving...' : 'Save Changes' }}
+            </button>
+            <button
+              type="button"
+              @click="resetForm"
+              :disabled="loading"
+              class="px-4 py-2.5 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-lg transition duration-200 flex items-center justify-center hover:bg-gray-50 text-sm"
+            >
+              <i class="fas fa-undo mr-2"></i>
+              Reset
             </button>
           </div>
         </form>
@@ -111,24 +147,52 @@ const showSuccessModal = ref(false)
 const showErrorModal = ref(false)
 const errorMessage = ref('')
 
+// Computed properties for user info
+const user = computed(() => {
+  return auth.user?.value || auth.user
+})
+
+const isAdmin = computed(() => {
+  return user.value?.type === 'admin'
+})
+
+// Store initial form values for reset
+const initialForm = ref({
+  name: '',
+  email: '',
+  phone: '',
+  password: ''
+})
+
 onMounted(async () => {
   await auth.checkAuth()
   // Handle both ref and direct access
-  const user = auth.user?.value || auth.user
-  if (user) {
+  const currentUser = auth.user?.value || auth.user
+  if (currentUser) {
     form.value = {
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.phone || '',
+      name: currentUser.name || '',
+      email: currentUser.email || '',
+      phone: currentUser.phone || '',
       password: ''
     }
+    // Store initial values for reset
+    initialForm.value = { ...form.value }
   }
 })
+
+const resetForm = () => {
+  form.value = {
+    name: initialForm.value.name,
+    email: initialForm.value.email,
+    phone: initialForm.value.phone,
+    password: ''
+  }
+  error.value = ''
+}
 
 const handleSubmit = async () => {
   loading.value = true
   error.value = ''
-  success.value = false
   
   try {
     const data = { ...form.value }
@@ -143,12 +207,19 @@ const handleSubmit = async () => {
     await auth.checkAuth()
     
     // Update form with latest user data (including phone)
-    const user = auth.user?.value || auth.user
-    if (user) {
+    const currentUser = auth.user?.value || auth.user
+    if (currentUser) {
       form.value = {
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || '',
+        password: ''
+      }
+      // Update initial form values
+      initialForm.value = {
+        name: form.value.name,
+        email: form.value.email,
+        phone: form.value.phone,
         password: ''
       }
     }

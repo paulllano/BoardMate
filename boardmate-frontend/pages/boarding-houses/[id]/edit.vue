@@ -48,6 +48,7 @@
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-user-tie mr-2 text-blue-600"></i>
                     Admin <span class="text-red-500">*</span>
                   </label>
                   <select
@@ -64,6 +65,7 @@
 
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>
                     Address <span class="text-red-500">*</span>
                   </label>
                   <textarea
@@ -77,6 +79,7 @@
 
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-align-left mr-2 text-blue-600"></i>
                     Description
                   </label>
                   <textarea
@@ -86,12 +89,54 @@
                     placeholder="Enter description (optional)"
                   ></textarea>
                 </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-venus-mars mr-2 text-blue-600"></i>
+                    Gender Preference <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    v-model="form.gender_preference"
+                    required
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  >
+                    <option value="">Select gender preference</option>
+                    <option value="male">Male Only</option>
+                    <option value="female">Female Only</option>
+                    <option value="everyone">Everyone (Mixed)</option>
+                  </select>
+                  <p class="text-sm text-gray-500 mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Select who can apply to this boarding house. "Everyone" allows both male and female boarders.
+                  </p>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-money-bill-wave mr-2 text-blue-600"></i>
+                    Advance Payment Amount <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="form.advance_payment_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    placeholder="0.00"
+                  />
+                  <p class="text-sm text-gray-500 mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Required advance payment amount for reservation.
+                  </p>
+                </div>
               </div>
 
               <!-- Right Column -->
-              <div>
+              <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-building mr-2 text-blue-600"></i>
                     Boarding House Name <span class="text-red-500">*</span>
                   </label>
                   <input
@@ -101,6 +146,24 @@
                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     placeholder="Enter boarding house name"
                   />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-file-contract mr-2 text-blue-600"></i>
+                    Policies & Terms <span class="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    v-model="form.policies"
+                    rows="6"
+                    required
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-y"
+                    placeholder="Enter house rules, policies, and terms & conditions..."
+                  ></textarea>
+                  <p class="text-sm text-gray-500 mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Minimum 50 characters. These policies will be shown to boarders when they apply.
+                  </p>
                 </div>
               </div>
             </div>
@@ -164,7 +227,10 @@ const form = ref({
   admin_id: '',
   name: '',
   address: '',
-  description: ''
+  description: '',
+  gender_preference: 'everyone',
+  advance_payment_amount: 0,
+  policies: ''
 })
 
 const admins = ref([])
@@ -307,7 +373,10 @@ const fetchHouse = async () => {
           admin_id: house.admin_id ? String(house.admin_id) : '',
           name: house.name || '',
           address: house.address || '',
-          description: house.description || ''
+          description: house.description || '',
+          gender_preference: house.gender_preference || 'everyone',
+          advance_payment_amount: house.advance_payment_amount || 0,
+          policies: house.policies || ''
         }
         console.log('✅ Form populated successfully:', form.value)
         error.value = '' // Clear any previous errors

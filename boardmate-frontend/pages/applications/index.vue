@@ -11,7 +11,7 @@
           to="/applications/create"
           class="bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center"
         >
-          <i class="fas fa-plus mr-2"></i>New Application
+          <i class="fas fa-paper-plane mr-2"></i>New Application
         </NuxtLink>
       </div>
 
@@ -162,7 +162,7 @@
         to="/applications/create"
         class="bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 inline-flex items-center"
       >
-        <i class="fas fa-plus mr-2"></i>Create Application
+        <i class="fas fa-paper-plane mr-2"></i>Create Application
       </NuxtLink>
     </div>
     

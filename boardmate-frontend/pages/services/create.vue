@@ -18,6 +18,7 @@
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-building mr-2 text-blue-600"></i>
               Boarding House <span class="text-red-500">*</span>
             </label>
             <select
@@ -34,6 +35,7 @@
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-concierge-bell mr-2 text-blue-600"></i>
               Service Name <span class="text-red-500">*</span>
             </label>
             <input
@@ -47,6 +49,7 @@
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-align-left mr-2 text-blue-600"></i>
               Description <span class="text-red-500">*</span>
             </label>
             <textarea
@@ -60,6 +63,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-money-bill-wave mr-2 text-blue-600"></i>
                 Price <span class="text-red-500">*</span>
               </label>
               <div class="relative">
@@ -77,6 +81,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-tags mr-2 text-blue-600"></i>
                 Category <span class="text-red-500">*</span>
               </label>
               <select
@@ -97,6 +102,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-check-circle mr-2 text-blue-600"></i>
                 Availability <span class="text-red-500">*</span>
               </label>
               <select
@@ -118,12 +124,16 @@
                 type="checkbox"
                 class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span class="ml-2 text-sm text-gray-700">This is a recurring service</span>
+              <span class="ml-2 text-sm text-gray-700">
+                <i class="fas fa-redo mr-1 text-blue-600"></i>
+                This is a recurring service
+              </span>
             </label>
           </div>
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-sticky-note mr-2 text-blue-600"></i>
               Additional Notes
             </label>
             <textarea

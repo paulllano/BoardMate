@@ -51,8 +51,26 @@
           <h2 class="text-lg font-bold text-gray-900 mb-4">Payment Information</h2>
           <div class="space-y-4">
             <div>
-              <div class="text-sm text-gray-500 mb-1">Amount</div>
-              <div class="text-3xl font-bold text-green-600">₱{{ formatCurrency(payment.amount) }}</div>
+              <div class="text-sm text-gray-500 mb-1">Payment Amount</div>
+              <div class="text-3xl font-bold text-green-600">₱{{ formatCurrency(payment.original_amount || payment.amount) }}</div>
+              <div v-if="payment.credit_applied > 0" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-700">Credit Applied:</span>
+                    <span class="font-semibold text-blue-600">-₱{{ formatCurrency(payment.credit_applied) }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm pt-2 border-t border-blue-200">
+                    <span class="font-semibold text-gray-900">Amount Paid:</span>
+                    <span class="text-lg font-bold text-green-600">
+                      ₱{{ formatCurrency((payment.original_amount || payment.amount) - (payment.credit_applied || 0)) }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-blue-700 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Advance payment credit was applied to reduce this payment.
+                  </p>
+                </div>
+              </div>
             </div>
             <div>
               <div class="text-sm text-gray-500 mb-1">Payment Date</div>

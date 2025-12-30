@@ -9,7 +9,7 @@ class BoardingHouse extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['admin_id', 'name', 'address', 'description'];
+    protected $fillable = ['admin_id', 'name', 'address', 'description', 'gender_preference', 'advance_payment_amount', 'policies'];
 
     public function admin()
     {

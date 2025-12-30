@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\BoardingHouse;
 use App\Models\Admin;
+use App\Models\Boarder;
 use App\Http\Requests\StoreBoardingHouseRequest;
 use App\Http\Requests\UpdateBoardingHouseRequest;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class BoardingHouseController extends Controller
 {
@@ -45,6 +47,49 @@ class BoardingHouseController extends Controller
     public function browse(Request $request)
     {
         $query = BoardingHouse::query();
+        
+        // Try to get authenticated user (optional authentication)
+        $user = null;
+        $token = $request->bearerToken();
+        
+        if ($token) {
+            // Check if token exists and is valid
+            $accessToken = PersonalAccessToken::findToken($token);
+            if ($accessToken) {
+                // Get the tokenable (user) model
+                $tokenable = $accessToken->tokenable;
+                if ($tokenable instanceof Boarder || $tokenable instanceof Admin) {
+                    $user = $tokenable;
+                }
+            }
+        }
+        
+        // Gender-based filtering: Only show boarding houses that match boarder's gender
+        if ($user && !($user instanceof Admin)) {
+            // User is a boarder - filter by gender preference
+            // Get gender directly from the user model
+            $boarderGender = $user->gender;
+            
+            if ($boarderGender && in_array($boarderGender, ['male', 'female', 'other'])) {
+                // Strict filtering: Show only houses that accept this gender OR everyone
+                // Male boarders: see 'male' or 'everyone' houses (NOT 'female')
+                // Female boarders: see 'female' or 'everyone' houses (NOT 'male')
+                // Other gender: see 'everyone' houses only (since no house has 'other' preference)
+                if ($boarderGender === 'other') {
+                    // For 'other' gender, only show 'everyone' houses
+                    $query->where('gender_preference', 'everyone');
+                } else {
+                    // For 'male' or 'female', show matching gender or 'everyone'
+                    // This ensures male boarders don't see female-only houses and vice versa
+                    $query->where(function($q) use ($boarderGender) {
+                        $q->where('gender_preference', 'everyone')
+                          ->orWhere('gender_preference', $boarderGender);
+                    });
+                }
+            }
+            // If boarder has no gender set or invalid gender, show all houses (fallback)
+        }
+        // If no user or admin, show all houses (no gender filtering)
         
         // Search functionality
         if ($request->has('search') && $request->search) {
@@ -116,7 +161,22 @@ class BoardingHouseController extends Controller
     {
         $boardingHouse->load(['admin', 'boarders', 'reviews', 'contracts', 'services']);
         
-        return response()->json($boardingHouse);
+        // Explicitly return all attributes including advance_payment_amount and policies
+        return response()->json([
+            'id' => $boardingHouse->id,
+            'name' => $boardingHouse->name,
+            'address' => $boardingHouse->address,
+            'description' => $boardingHouse->description,
+            'admin_id' => $boardingHouse->admin_id,
+            'gender_preference' => $boardingHouse->gender_preference,
+            'advance_payment_amount' => $boardingHouse->advance_payment_amount,
+            'policies' => $boardingHouse->policies,
+            'admin' => $boardingHouse->admin,
+            'boarders' => $boardingHouse->boarders,
+            'reviews' => $boardingHouse->reviews,
+            'contracts' => $boardingHouse->contracts,
+            'services' => $boardingHouse->services,
+        ]);
     }
 
     /**
@@ -192,6 +252,9 @@ class BoardingHouseController extends Controller
             'address' => $boardingHouse->address,
             'description' => $boardingHouse->description,
             'admin_id' => $boardingHouse->admin_id,
+            'gender_preference' => $boardingHouse->gender_preference,
+            'advance_payment_amount' => $boardingHouse->advance_payment_amount,
+            'policies' => $boardingHouse->policies,
             'admin' => $boardingHouse->admin,
             'boarders' => $boardingHouse->boarders,
             'reviews' => $boardingHouse->reviews,

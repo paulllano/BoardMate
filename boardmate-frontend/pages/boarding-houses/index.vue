@@ -13,7 +13,7 @@
         to="/boarding-houses/create"
         class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center hover:-translate-y-0.5 hover:shadow-lg"
       >
-        <i class="fas fa-plus mr-2"></i>Add New Boarding House
+        <i class="fas fa-building mr-2"></i>Add New Boarding House
       </NuxtLink>
     </div>
 
@@ -36,7 +36,32 @@
               <h3 class="text-white font-bold text-lg truncate max-w-[200px]" :title="house.name">
                 {{ house.name }}
               </h3>
-              <p class="text-white text-opacity-80 text-xs">ID: {{ house.id }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <p class="text-white text-opacity-80 text-xs">ID: {{ house.id }}</p>
+                <span
+                  v-if="house.gender_preference"
+                  :class="{
+                    'bg-blue-100 text-blue-800': house.gender_preference === 'male',
+                    'bg-pink-100 text-pink-800': house.gender_preference === 'female',
+                    'bg-purple-100 text-purple-800': house.gender_preference === 'everyone'
+                  }"
+                  class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
+                >
+                  <i
+                    v-if="house.gender_preference === 'male'"
+                    class="fas fa-mars mr-1"
+                  ></i>
+                  <i
+                    v-else-if="house.gender_preference === 'female'"
+                    class="fas fa-venus mr-1"
+                  ></i>
+                  <i
+                    v-else
+                    class="fas fa-venus-mars mr-1"
+                  ></i>
+                  {{ house.gender_preference === 'male' ? 'Male Only' : house.gender_preference === 'female' ? 'Female Only' : 'Everyone' }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -118,7 +143,7 @@
           to="/boarding-houses/create"
           class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 inline-flex items-center"
         >
-          <i class="fas fa-plus mr-2"></i>Create First Boarding House
+          <i class="fas fa-building mr-2"></i>Create First Boarding House
         </NuxtLink>
       </div>
     </div>

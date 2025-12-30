@@ -101,19 +101,19 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
           <NuxtLink to="/boarding-houses/create" 
                     class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-lg">
-            <i class="fas fa-plus mr-1 text-sm"></i>Add Boarding House
+            <i class="fas fa-building mr-2 text-sm"></i>Add Boarding House
           </NuxtLink>
           <NuxtLink to="/services/create" 
                     class="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-lg">
-            <i class="fas fa-concierge-bell mr-1 text-sm"></i>Add Service
+            <i class="fas fa-concierge-bell mr-2 text-sm"></i>Add Service
           </NuxtLink>
           <NuxtLink to="/contracts/create" 
                     class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-lg">
-            <i class="fas fa-file-contract mr-1 text-sm"></i>Create Contract
+            <i class="fas fa-file-contract mr-2 text-sm"></i>Create Contract
           </NuxtLink>
           <NuxtLink to="/payments/create" 
                     class="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-lg">
-            <i class="fas fa-credit-card mr-1 text-sm"></i>Record Payment
+            <i class="fas fa-credit-card mr-2 text-sm"></i>Record Payment
           </NuxtLink>
           <NuxtLink to="/applications" 
                     class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-lg">

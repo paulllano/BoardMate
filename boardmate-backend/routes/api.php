@@ -16,8 +16,8 @@ use App\Http\Controllers\ApplicationController;
 // PUBLIC ROUTES (No Authentication Required)
 // ============================================
 
-// Browse boarding houses (public - for boarders to search)
-Route::get('/boarding-houses/browse', [BoardingHouseController::class, 'browse']); // Public browse/search
+// Browse boarding houses (public but accepts optional auth for gender filtering)
+Route::get('/boarding-houses/browse', [BoardingHouseController::class, 'browse']); // Public browse/search with optional auth
     // curl -X GET http://127.0.0.1:8000/api/boarding-houses/browse?search=house&page=1 \
     //     -H "Content-Type: application/json"
 

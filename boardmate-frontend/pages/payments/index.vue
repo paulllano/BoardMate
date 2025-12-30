@@ -13,7 +13,7 @@
           to="/payments/create"
           :class="isAdmin ? 'bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600' : 'bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600'" class="text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center hover:-translate-y-0.5 hover:shadow-lg"
         >
-          <i class="fas fa-plus mr-2"></i>
+          <i class="fas fa-credit-card mr-2"></i>
           {{ isAdmin ? 'Record New Payment' : 'Make Payment' }}
         </NuxtLink>
         <button
@@ -66,7 +66,7 @@
       </div>
 
       <div v-else-if="payments.length > 0" class="overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full table-auto">
           <thead :class="isAdmin ? 'bg-gradient-to-r from-blue-600 to-teal-500' : 'bg-gradient-to-r from-green-600 to-teal-500'" class="text-white">
             <tr>
               <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">ID</th>
@@ -74,37 +74,61 @@
               <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Contract</th>
               <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Amount</th>
               <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Payment Date</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Type</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Status</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">Actions</th>
+              <th class="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">Type</th>
+              <th class="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">Status</th>
+              <th class="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="payment in payments" :key="payment.id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ payment.id }}</td>
-              <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ payment.boarder?.name || 'N/A' }}
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">{{ payment.id }}</td>
+              <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">
+                {{ payment.boarder?.name || payment.application?.boarder?.name || 'N/A' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                Contract #{{ payment.contract?.id || 'N/A' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">₱{{ formatCurrency(payment.amount) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDate(payment.payment_date) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span v-if="payment.payment_type" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                  {{ payment.payment_type }}
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">
+                <span v-if="payment.is_advance_payment" class="text-blue-600 font-semibold">
+                  <i class="fas fa-money-bill-wave mr-1"></i>Advance Payment
                 </span>
-                <span v-else class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                  N/A
+                <span v-else>
+                  Contract #{{ payment.contract?.id || 'N/A' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="getPaymentStatusBadgeClass(payment.status)">
+              <td class="px-6 py-4 whitespace-nowrap align-middle">
+                <div class="flex flex-col">
+                  <span class="text-sm font-semibold text-green-600">₱{{ formatCurrency(payment.original_amount || payment.amount) }}</span>
+                  <span v-if="payment.credit_applied > 0" class="text-xs text-blue-600 mt-1">
+                    <i class="fas fa-wallet mr-1"></i>
+                    Credit: -₱{{ formatCurrency(payment.credit_applied) }}
+                  </span>
+                  <span v-if="payment.credit_applied > 0" class="text-xs text-gray-600 mt-0.5">
+                    Paid: ₱{{ formatCurrency((payment.original_amount || payment.amount) - (payment.credit_applied || 0)) }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">{{ formatDate(payment.payment_date) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
+                <div class="flex flex-col items-center gap-1.5 justify-center min-h-[2.5rem]">
+                  <span v-if="payment.is_advance_payment" class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                    <i class="fas fa-money-bill-wave mr-1"></i>Advance Payment
+                  </span>
+                  <span v-else-if="payment.payment_type" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                    {{ payment.payment_type }}
+                  </span>
+                  <span v-else-if="!payment.credit_applied" class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                    N/A
+                  </span>
+                  <span v-if="payment.credit_applied > 0" class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                    <i class="fas fa-wallet mr-1"></i>Credit Used
+                  </span>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
+                <span :class="getPaymentStatusBadgeClass(payment.status)" class="inline-block">
                   {{ payment.status === 'completed' ? 'Completed' : payment.status === 'cancelled' ? 'Cancelled' : payment.status === 'failed' ? 'Failed' : payment.status }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <div class="flex items-center gap-2">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-center align-middle">
+                <div class="flex items-center justify-center gap-2">
                   <NuxtLink
                     :to="`/payments/${payment.id}`"
                     :class="isAdmin ? 'bg-blue-50 hover:bg-blue-100 text-blue-600' : 'bg-green-50 hover:bg-green-100 text-green-600'" class="p-2 rounded-lg transition inline-flex items-center justify-center"
@@ -279,10 +303,11 @@ const fetchPayments = async () => {
     const user = auth.user?.value || auth.user
     if (user && user.type === 'boarder' && !isAdmin.value) {
       payments.value = allPayments.filter(payment => {
-        // Check if payment belongs to boarder's contract
+        // Check if payment belongs to boarder's contract or application
         const paymentBoarderId = payment.boarder_id || payment.boarder?.id
         const contractBoarderId = payment.contract?.boarder_id || payment.contract?.boarder?.id
-        return paymentBoarderId === user.id || contractBoarderId === user.id
+        const applicationBoarderId = payment.application?.boarder_id || payment.application?.boarder?.id
+        return paymentBoarderId === user.id || contractBoarderId === user.id || applicationBoarderId === user.id
       })
     } else {
       payments.value = allPayments

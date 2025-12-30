@@ -68,7 +68,7 @@
           
           <NuxtLink to="/reviews/create" 
                     class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-lg">
-            <i class="fas fa-star mr-1 text-sm"></i>Write Review
+            <i class="fas fa-star mr-2 text-sm"></i>Write Review
           </NuxtLink>
           
           <NuxtLink to="/reviews" 

@@ -19,6 +19,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-building mr-2 text-blue-600"></i>
                 Boarding House <span class="text-red-500">*</span>
               </label>
               <select
@@ -35,6 +36,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-user mr-2 text-blue-600"></i>
                 Full Name <span class="text-red-500">*</span>
               </label>
               <input
@@ -50,6 +52,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-envelope mr-2 text-blue-600"></i>
                 Email Address <span class="text-red-500">*</span>
               </label>
               <input
@@ -63,6 +66,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-phone mr-2 text-blue-600"></i>
                 Phone Number <span class="text-red-500">*</span>
               </label>
               <input
@@ -78,6 +82,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-birthday-cake mr-2 text-blue-600"></i>
                 Age <span class="text-red-500">*</span>
               </label>
               <input
@@ -93,6 +98,26 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-venus-mars mr-2 text-blue-600"></i>
+                Gender <span class="text-red-500">*</span>
+              </label>
+              <select
+                v-model="form.gender"
+                required
+                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              >
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-calendar mr-2 text-blue-600"></i>
                 Date of Birth
               </label>
               <input
@@ -105,6 +130,7 @@
 
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>
               Address
             </label>
             <textarea
@@ -161,7 +187,7 @@ import SuccessModal from '~/components/SuccessModal.vue'
 import ErrorModal from '~/components/ErrorModal.vue'
 
 definePageMeta({
-  middleware: 'auth',
+  middleware: ['auth', 'admin'],
   layout: 'app'
 })
 
@@ -183,16 +209,13 @@ const form = ref({
   email: '',
   phone: '',
   age: '',
+  gender: '',
   date_of_birth: '',
   address: ''
 })
 
 onMounted(async () => {
   await auth.checkAuth()
-  if (auth.user?.type !== 'admin') {
-    navigateTo('/dashboard/admin')
-    return
-  }
   await fetchBoardingHouses()
 })
 

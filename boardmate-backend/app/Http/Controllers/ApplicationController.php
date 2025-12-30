@@ -6,6 +6,7 @@ use App\Models\Application;
 use App\Models\BoardingHouse;
 use App\Models\Contract;
 use App\Models\Admin;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 
 class ApplicationController extends Controller
@@ -100,11 +101,55 @@ class ApplicationController extends Controller
     public function store(Request $request, $boardingHouse = null)
     {
         // Handle API requests (boarding_house_id in request body)
-        $request->validate([
-            'message' => 'nullable|string|max:1000',
-            'boarding_house_id' => 'required|exists:boarding_houses,id',
-        ]);
         $boardingHouse = BoardingHouse::findOrFail($request->boarding_house_id);
+        
+        // Manual validation to avoid exception handler issues
+        $errors = [];
+        
+        // Validate boarding_house_id
+        if (!$request->has('boarding_house_id') || !$request->boarding_house_id) {
+            $errors['boarding_house_id'] = ['The boarding house ID is required.'];
+        }
+        
+        // Validate policies_accepted
+        $policiesAccepted = $request->input('policies_accepted');
+        if (!$policiesAccepted || ($policiesAccepted !== true && $policiesAccepted !== 'true' && $policiesAccepted !== 1 && $policiesAccepted !== '1')) {
+            $errors['policies_accepted'] = ['You must accept the policies and terms & conditions to submit your application.'];
+        }
+        
+        // Validate message if provided
+        if ($request->has('message') && strlen($request->message) > 1000) {
+            $errors['message'] = ['The message must not exceed 1000 characters.'];
+        }
+        
+        // If advance payment is required, validate payment fields
+        $advancePaymentAmount = floatval($boardingHouse->advance_payment_amount ?? 0);
+        if ($advancePaymentAmount > 0) {
+            $paymentMethod = $request->input('advance_payment_method');
+            if (!$paymentMethod || !in_array($paymentMethod, ['Cash', 'GCash'])) {
+                $errors['advance_payment_method'] = ['The payment method is required and must be either Cash or GCash.'];
+            }
+            
+            if ($paymentMethod === 'GCash') {
+                $reference = $request->input('advance_payment_reference');
+                if (!$reference || trim($reference) === '') {
+                    $errors['advance_payment_reference'] = ['The reference number is required for GCash payments.'];
+                }
+            }
+            
+            if ($request->has('advance_payment_reference') && strlen($request->advance_payment_reference) > 255) {
+                $errors['advance_payment_reference'] = ['The reference number must not exceed 255 characters.'];
+            }
+        }
+        
+        // Return validation errors if any
+        if (!empty($errors)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $errors
+            ], (int) 422);
+        }
 
         // Get authenticated user (works with Sanctum)
         $user = $request->user();
@@ -113,7 +158,7 @@ class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthenticated.'
-            ], 401);
+            ], (int) 401);
         }
         
         // Check if user is a boarder
@@ -121,7 +166,7 @@ class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Only boarders can apply for boarding houses.'
-            ], 403);
+            ], (int) 403);
         }
         
         $boarder = $user;
@@ -131,7 +176,7 @@ class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You are already assigned to this boarding house.'
-            ], 400);
+            ], (int) 400);
         }
         
         // Check if boarder already has a pending application for this boarding house (check this first)
@@ -144,7 +189,7 @@ class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You already have a pending application for this boarding house.'
-            ], 400);
+            ], (int) 400);
         }
         
         // Check if boarder has an approved application for this boarding house
@@ -161,7 +206,7 @@ class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You already have an approved application for this boarding house.'
-            ], 400);
+            ], (int) 400);
         }
         
         // Check if boarder has an active contract for this boarding house
@@ -174,7 +219,7 @@ class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'You already have an active contract for this boarding house.'
-            ], 400);
+            ], (int) 400);
         }
 
         // Check if boarder is already assigned to another boarding house (for transfer warning)
@@ -219,19 +264,76 @@ class ApplicationController extends Controller
                         'id' => $currentBoardingHouse->id,
                         'name' => $currentBoardingHouse->name
                     ]
-                ], 400);
+                ], (int) 400);
             }
         }
 
-        $application = Application::create([
-            'boarder_id' => $boarder->id,
-            'boarding_house_id' => $boardingHouse->id,
-            'message' => $request->message,
-            'status' => 'pending',
-        ]);
+        // Create advance payment record if required
+        $advancePayment = null;
+        $advancePaymentAmount = floatval($boardingHouse->advance_payment_amount ?? 0);
+        if ($advancePaymentAmount > 0) {
+            try {
+                $advancePayment = Payment::create([
+                    'contract_id' => null, // No contract yet for advance payments
+                    'boarder_id' => $boarder->id,
+                    'amount' => $advancePaymentAmount,
+                    'payment_date' => now(),
+                    'method' => $request->input('advance_payment_method'),
+                    'payment_method' => $request->input('advance_payment_method'),
+                    'status' => 'completed', // Paid upfront
+                    'reference_number' => $request->input('advance_payment_reference'),
+                    'payment_type' => null, // Not a rent payment
+                    'is_advance_payment' => true,
+                    'used_as_credit' => false,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Error creating advance payment: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create advance payment record. Please try again.',
+                    'error' => $e->getMessage()
+                ], (int) 500);
+            }
+        }
 
+        // Create application with policies acceptance
+        try {
+            $application = Application::create([
+                'boarder_id' => $boarder->id,
+                'boarding_house_id' => $boardingHouse->id,
+                'message' => $request->input('message'),
+                'status' => 'pending',
+                'advance_payment_id' => $advancePayment ? $advancePayment->id : null,
+                'policies_accepted' => true,
+                'policies_accepted_at' => now(),
+                'policies_text' => $boardingHouse->policies, // Store snapshot
+            ]);
+
+            // Link payment to application if created
+            if ($advancePayment) {
+                $advancePayment->update(['application_id' => $application->id]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error creating application: ' . $e->getMessage());
+            // If advance payment was created, we should delete it or mark it as failed
+            if ($advancePayment) {
+                try {
+                    $advancePayment->delete();
+                } catch (\Exception $deleteException) {
+                    \Log::error('Error deleting advance payment after application creation failed: ' . $deleteException->getMessage());
+                }
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create application. Please try again.',
+                'error' => $e->getMessage()
+            ], (int) 500);
+        }
 
         $responseMessage = 'Application submitted successfully!';
+        if ($advancePaymentAmount > 0) {
+            $responseMessage .= ' Advance payment of ₱' . number_format($advancePaymentAmount, 2) . ' has been recorded.';
+        }
         if ($isTransfer && $currentBoardingHouse) {
             $responseMessage .= ' Note: You are currently assigned to ' . $currentBoardingHouse->name . '. If approved, you will be transferred.';
         }
@@ -239,13 +341,13 @@ class ApplicationController extends Controller
         return response()->json([
             'success' => true,
             'message' => $responseMessage,
-            'application' => $application->load(['boarder', 'boardingHouse']),
+            'application' => $application->load(['boarder', 'boardingHouse', 'advancePayment']),
             'is_transfer' => $isTransfer,
             'current_boarding_house' => $currentBoardingHouse ? [
                 'id' => $currentBoardingHouse->id,
                 'name' => $currentBoardingHouse->name
             ] : null
-        ], 201);
+        ], (int) 201);
     }
 
     /**
@@ -253,7 +355,7 @@ class ApplicationController extends Controller
      */
     public function show($id)
     {
-        $application = Application::with(['boarder', 'boardingHouse', 'reviewedBy', 'transferApprovedBy'])->findOrFail($id);
+        $application = Application::with(['boarder', 'boardingHouse', 'reviewedBy', 'transferApprovedBy', 'advancePayment'])->findOrFail($id);
         
         // Get authenticated user for authorization check
         $user = request()->user();
@@ -371,16 +473,24 @@ class ApplicationController extends Controller
             'boarding_house_id' => $application->boarding_house_id
         ]);
 
+        // Note: Advance payment credit will be transferred to contract when contract is created
+        // This is handled in ContractController when creating the contract
 
         $responseMessage = 'Application approved successfully! Boarder has been assigned to the boarding house.';
+        if ($application->advancePayment) {
+            $responseMessage .= ' Advance payment of ₱' . number_format($application->advancePayment->amount, 2) . ' will be available as credit when a contract is created.';
+        }
         if ($isTransfer && $previousBoardingHouse) {
             $responseMessage = 'Application approved! Boarder has been transferred from ' . $previousBoardingHouse->name . ' to ' . $application->boardingHouse->name . '.';
+            if ($application->advancePayment) {
+                $responseMessage .= ' Advance payment credit will be available when contract is created.';
+            }
         }
 
         return response()->json([
             'success' => true,
             'message' => $responseMessage,
-            'application' => $application->load(['boarder', 'boardingHouse', 'reviewedBy']),
+            'application' => $application->load(['boarder', 'boardingHouse', 'reviewedBy', 'advancePayment']),
             'is_transfer' => $isTransfer,
             'previous_boarding_house' => $previousBoardingHouse ? [
                 'id' => $previousBoardingHouse->id,
@@ -431,10 +541,30 @@ class ApplicationController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        // Auto-refund advance payment if exists
+        $refundMessage = '';
+        $refundAmount = null;
+        $application->load('advancePayment');
+        
+        if ($application->advancePayment) {
+            $advancePayment = $application->advancePayment;
+            $refundAmount = $advancePayment->amount;
+            $advancePayment->update([
+                'status' => 'refunded'
+            ]);
+            $refundMessage = ' Advance payment of ₱' . number_format($refundAmount, 2) . ' has been automatically refunded.';
+        }
+        
+        // Reload application to get updated relationships
+        $application->refresh();
+        $application->load(['boarder', 'boardingHouse', 'reviewedBy', 'advancePayment']);
+
         return response()->json([
             'success' => true,
-            'message' => 'Application rejected successfully!',
-            'application' => $application->load(['boarder', 'boardingHouse', 'reviewedBy'])
+            'message' => 'Application rejected successfully!' . $refundMessage,
+            'application' => $application,
+            'refunded' => $refundAmount !== null,
+            'refund_amount' => $refundAmount
         ]);
     }
 

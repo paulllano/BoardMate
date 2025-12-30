@@ -36,6 +36,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-user mr-2 text-blue-600"></i>
                   Boarder <span class="text-red-500">*</span>
                 </label>
                 <select
@@ -56,6 +57,7 @@
 
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-file-contract mr-2 text-blue-600"></i>
                   Contract
                 </label>
                 <select
@@ -77,6 +79,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-money-bill-wave mr-2 text-blue-600"></i>
                   Amount <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
@@ -94,6 +97,7 @@
 
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-calendar mr-2 text-blue-600"></i>
                   Payment Date
                 </label>
                 <input
@@ -107,6 +111,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-credit-card mr-2 text-blue-600"></i>
                   Payment Method <span class="text-red-500">*</span>
                 </label>
                 <select
@@ -122,6 +127,7 @@
 
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-tags mr-2 text-blue-600"></i>
                   Payment Type
                 </label>
                 <select
@@ -137,6 +143,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-check-circle mr-2 text-blue-600"></i>
                 Status <span class="text-red-500">*</span>
               </label>
               <select
@@ -153,6 +160,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-hashtag mr-2 text-blue-600"></i>
                 Reference Number
               </label>
               <input
@@ -165,6 +173,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-sticky-note mr-2 text-blue-600"></i>
                 Notes
               </label>
               <textarea

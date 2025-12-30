@@ -195,7 +195,7 @@ export const useAuth = () => {
     } finally {
       api.removeToken()
       user.value = null
-      if (process.client) {
+      if (typeof window !== 'undefined') {
         navigateTo('/auth/role')
       }
     }

@@ -36,6 +36,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-building mr-2 text-blue-600"></i>
                   Boarding House <span class="text-red-500">*</span>
                 </label>
                 <select
@@ -52,6 +53,7 @@
 
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-user mr-2 text-blue-600"></i>
                   Full Name <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -66,6 +68,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-envelope mr-2 text-blue-600"></i>
                   Email Address <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -78,6 +81,7 @@
 
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-phone mr-2 text-blue-600"></i>
                   Phone Number <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -92,6 +96,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-birthday-cake mr-2 text-blue-600"></i>
                   Age <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -106,6 +111,7 @@
 
               <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  <i class="fas fa-calendar mr-2 text-blue-600"></i>
                   Date of Birth
                 </label>
                 <input
@@ -118,6 +124,7 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>
                 Address
               </label>
               <textarea

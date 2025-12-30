@@ -23,6 +23,7 @@ class Boarder extends Authenticatable
         'date_of_birth', 
         'address',
         'password',
+        'gender',
     ];
 
     protected $hidden = ['password', 'remember_token'];

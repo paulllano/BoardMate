@@ -68,7 +68,32 @@
             class="bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden"
           >
             <div class="p-6">
-              <h5 class="font-bold text-gray-900 mb-1">{{ house.name }}</h5>
+              <h5 class="font-bold text-gray-900 mb-2">{{ house.name }}</h5>
+              <div class="mb-2">
+                <span 
+                  v-if="house.gender_preference"
+                  :class="{
+                    'bg-blue-100 text-blue-800': house.gender_preference === 'male',
+                    'bg-pink-100 text-pink-800': house.gender_preference === 'female',
+                    'bg-purple-100 text-purple-800': house.gender_preference === 'everyone'
+                  }"
+                  class="text-xs font-semibold px-2 py-1 rounded-full inline-flex items-center"
+                >
+                  <i 
+                    v-if="house.gender_preference === 'male'" 
+                    class="fas fa-mars mr-1"
+                  ></i>
+                  <i 
+                    v-else-if="house.gender_preference === 'female'" 
+                    class="fas fa-venus mr-1"
+                  ></i>
+                  <i 
+                    v-else 
+                    class="fas fa-venus-mars mr-1"
+                  ></i>
+                  {{ house.gender_preference === 'male' ? 'Male Only' : house.gender_preference === 'female' ? 'Female Only' : 'Everyone' }}
+                </span>
+              </div>
               <div class="text-gray-600 text-sm mb-2">{{ house.address }}</div>
               <p class="text-gray-700 text-sm mb-4 line-clamp-3">
                 {{ house.description && house.description.length > 120 

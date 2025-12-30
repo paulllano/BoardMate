@@ -160,7 +160,7 @@
             </div>
 
             <!-- Payment Method -->
-            <div>
+            <div v-if="!isFullyCoveredByCredit">
               <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fas fa-credit-card mr-2 text-blue-600"></i>Payment Method *
               </label>
@@ -173,6 +173,12 @@
                 <option value="Cash">Cash</option>
                 <option value="GCash">GCash</option>
               </select>
+            </div>
+            <div v-else class="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p class="text-sm text-green-800">
+                <i class="fas fa-check-circle mr-2"></i>
+                <strong>No payment method needed</strong> - Credit fully covers this payment!
+              </p>
             </div>
           </div>
 
@@ -259,6 +265,63 @@
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="0.00"
               />
+              <!-- Advance Payment Credit -->
+              <div v-if="selectedContract && selectedContract.advance_payment_credit > 0" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-blue-800">
+                    <i class="fas fa-wallet mr-1"></i>
+                    Available Credit:
+                  </span>
+                  <span class="text-lg font-bold text-blue-600">
+                    ₱{{ formatCurrency(selectedContract.advance_payment_credit) }}
+                  </span>
+                </div>
+                <label class="flex items-center cursor-pointer">
+                  <input
+                    v-model="form.use_credit"
+                    type="checkbox"
+                    class="mr-2 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    @change="onCreditToggle"
+                  />
+                  <span class="text-sm text-blue-700">
+                    Apply credit to this payment
+                  </span>
+                </label>
+                <div v-if="form.use_credit" class="mt-2 space-y-1">
+                  <p class="text-xs text-blue-600">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Credit of ₱{{ formatCurrency(selectedContract.advance_payment_credit) }} will be applied to reduce your payment amount.
+                  </p>
+                  <div v-if="!form.amount || parseFloat(form.amount) <= 0" class="p-2 bg-yellow-50 border border-yellow-200 rounded">
+                    <p class="text-xs text-yellow-800">
+                      <i class="fas fa-exclamation-triangle mr-1"></i>
+                      Please enter the payment amount above (e.g., rent amount). Your credit will then be applied to reduce it.
+                    </p>
+                  </div>
+                  <div v-else class="p-2 bg-white border border-blue-200 rounded">
+                    <div class="flex justify-between text-sm">
+                      <span class="text-gray-700">Payment Amount:</span>
+                      <span class="font-semibold">₱{{ formatCurrency(form.amount) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm mt-1">
+                      <span class="text-gray-700">Credit Applied:</span>
+                      <span class="font-semibold text-green-600">-₱{{ formatCurrency(Math.min(parseFloat(form.amount) || 0, selectedContract.advance_payment_credit)) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm mt-1 pt-1 border-t border-gray-200">
+                      <span class="font-semibold text-gray-900">Final Amount to Pay:</span>
+                      <span class="font-bold" :class="finalPaymentAmount === 0 ? 'text-green-600' : 'text-blue-600'">
+                        ₱{{ formatCurrency(finalPaymentAmount) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div v-if="form.use_credit && isFullyCoveredByCredit" class="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                    <p class="text-xs text-green-800 font-semibold">
+                      <i class="fas fa-check-circle mr-1"></i>
+                      Your credit fully covers this payment! No additional payment needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -278,7 +341,7 @@
             </div>
 
             <!-- Payment Method -->
-            <div>
+            <div v-if="!isFullyCoveredByCredit">
               <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fas fa-credit-card mr-2 text-green-600"></i>Payment Method *
               </label>
@@ -291,6 +354,12 @@
                 <option value="Cash">Cash</option>
                 <option value="GCash">GCash</option>
               </select>
+            </div>
+            <div v-else class="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p class="text-sm text-green-800">
+                <i class="fas fa-check-circle mr-2"></i>
+                <strong>No payment method needed</strong> - Your credit fully covers this payment!
+              </p>
             </div>
           </div>
 
@@ -458,7 +527,8 @@ const form = ref({
   payment_method: '',
   payment_type: '',
   notes: '',
-  status: '' // Required for admins, optional for boarders (defaults to pending)
+  status: '', // Required for admins, optional for boarders (defaults to pending)
+  use_credit: false
 })
 
 onMounted(async () => {
@@ -564,6 +634,24 @@ const selectedContract = computed(() => {
   return contracts.value.find(c => c.id == form.value.contract_id)
 })
 
+// Check if payment is fully covered by credit
+const isFullyCoveredByCredit = computed(() => {
+  if (!selectedContract.value || !form.value.use_credit) return false
+  const originalAmount = parseFloat(form.value.amount) || 0
+  const creditAmount = parseFloat(selectedContract.value.advance_payment_credit) || 0
+  return creditAmount >= originalAmount && originalAmount > 0
+})
+
+// Calculate final payment amount after credit
+const finalPaymentAmount = computed(() => {
+  if (!selectedContract.value || !form.value.use_credit) {
+    return parseFloat(form.value.amount) || 0
+  }
+  const originalAmount = parseFloat(form.value.amount) || 0
+  const creditAmount = parseFloat(selectedContract.value.advance_payment_credit) || 0
+  return Math.max(0, originalAmount - creditAmount)
+})
+
 // When contract is selected, automatically set boarder_id (for boarders/admins) and amount (if full payment)
 const onContractChange = () => {
   if (form.value.contract_id) {
@@ -607,12 +695,26 @@ const onPaymentTypeChange = () => {
       const rentAmount = selectedContract.rent_amount || selectedContract.rentAmount
       if (rentAmount) {
         form.value.amount = rentAmount
+        
+        // Auto-check credit if it covers the full amount
+        const availableCredit = selectedContract.advance_payment_credit || 0
+        if (availableCredit >= rentAmount && availableCredit > 0) {
+          form.value.use_credit = true
+        }
       }
     }
   } else if (form.value.payment_type === 'partial') {
     // Clear amount for partial payment (user will enter manually)
     form.value.amount = ''
+    // Don't auto-uncheck credit for partial payments - let user decide
   }
+}
+
+// When credit toggle changes
+const onCreditToggle = () => {
+  // Don't modify the amount field - keep original amount visible
+  // The credit will be applied on the backend
+  // This way validation can check the original amount
 }
 
 // Format currency helper
@@ -633,15 +735,29 @@ const handleSubmit = async () => {
       return
     }
     
+    // Calculate final amount after credit
+    const originalAmount = parseFloat(form.value.amount) || 0
+    const creditAmount = (selectedContract.value && form.value.use_credit && selectedContract.value.advance_payment_credit) 
+      ? parseFloat(selectedContract.value.advance_payment_credit) 
+      : 0
+    const finalAmount = Math.max(0, originalAmount - creditAmount)
+    
     // Check if amount is provided
-    if (!form.value.amount || parseFloat(form.value.amount) <= 0) {
-      error.value = 'Please enter a valid payment amount.'
+    if (!form.value.amount || originalAmount <= 0) {
+      if (form.value.use_credit && creditAmount > 0) {
+        error.value = 'Please enter the payment amount (e.g., rent amount). Your credit will be applied to reduce it.'
+      } else {
+        error.value = 'Please enter a valid payment amount.'
+      }
       loading.value = false
       return
     }
     
-    // Check if payment method is selected
-    if (!form.value.payment_method) {
+    // Improved validation messages
+    if (finalAmount === 0 && form.value.use_credit) {
+      // Credit fully covers payment - no payment method needed
+      // This is handled below by not requiring payment_method
+    } else if (finalAmount > 0 && !form.value.payment_method) {
       error.value = 'Please select a payment method.'
       loading.value = false
       return
@@ -689,9 +805,28 @@ const handleSubmit = async () => {
     // Prepare payment data (reference_number is auto-generated by backend)
     const paymentData = { ...form.value }
     
-    // Convert amount to number
-    if (paymentData.amount) {
-      paymentData.amount = parseFloat(paymentData.amount)
+    // Send simplified amount_to_pay instead of original amount
+    // Backend will calculate: originalAmount = amount_to_pay + credit
+    if (form.value.use_credit && creditAmount > 0) {
+      paymentData.amount_to_pay = finalAmount
+      // Still send original amount for backward compatibility, but backend prefers amount_to_pay
+      paymentData.amount = originalAmount
+    } else {
+      paymentData.amount = originalAmount
+    }
+    
+    // Include use_credit flag if credit is available and checked
+    if (selectedContract.value && selectedContract.value.advance_payment_credit > 0 && form.value.use_credit) {
+      paymentData.use_credit = true
+    } else {
+      delete paymentData.use_credit
+    }
+    
+    // If credit covers full amount (finalAmount === 0), payment method is optional
+    // Backend will set default if not provided
+    if (finalAmount === 0 && !paymentData.payment_method) {
+      // Don't send payment_method - backend will handle it
+      delete paymentData.payment_method
     }
     
     // Ensure boarder_id is set

@@ -26,6 +26,9 @@ class StoreBoardingHouseRequest extends FormRequest
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:500',
             'description' => 'nullable|string|max:1000',
+            'gender_preference' => 'required|in:male,female,everyone',
+            'advance_payment_amount' => 'required|numeric|min:0',
+            'policies' => 'required|string|min:50',
         ];
     }
 }

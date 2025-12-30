@@ -126,7 +126,15 @@
                   <tbody class="divide-y divide-gray-200">
                     <tr v-for="payment in payments.slice(0, 5)" :key="payment.id" class="hover:bg-gray-50">
                       <td class="px-4 py-3">{{ payment.id }}</td>
-                      <td class="px-4 py-3 font-semibold text-green-600">₱{{ formatCurrency(payment.amount) }}</td>
+                      <td class="px-4 py-3">
+                        <div class="flex flex-col">
+                          <span class="font-semibold text-green-600">₱{{ formatCurrency(payment.original_amount || payment.amount) }}</span>
+                          <span v-if="payment.credit_applied > 0" class="text-xs text-blue-600 mt-1">
+                            <i class="fas fa-wallet mr-1"></i>
+                            Credit: -₱{{ formatCurrency(payment.credit_applied) }}
+                          </span>
+                        </div>
+                      </td>
                       <td class="px-4 py-3">{{ formatDate(payment.payment_date) }}</td>
                       <td class="px-4 py-3">
                         <span :class="getPaymentStatusBadgeClass(payment.status)">

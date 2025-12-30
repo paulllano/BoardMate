@@ -105,6 +105,7 @@ class AuthController extends Controller
                     'name' => $boarder->name,
                     'email' => $boarder->email,
                     'phone' => $boarder->phone ?? null,
+                    'gender' => $boarder->gender,
                     'type' => 'boarder'
                 ]
             ], 200, ['Content-Type' => 'application/json'], JSON_UNESCAPED_SLASHES);
@@ -193,6 +194,7 @@ class AuthController extends Controller
                 'phone' => ['nullable', 'string', 'max:50'],
                 'date_of_birth' => ['nullable', 'date'],
                 'address' => ['nullable', 'string'],
+                'gender' => ['required', 'in:male,female,other'],
             ]);
 
             $boarder = Boarder::create([
@@ -201,6 +203,7 @@ class AuthController extends Controller
                 'phone' => $data['phone'] ?? null,
                 'date_of_birth' => $data['date_of_birth'] ?? null,
                 'address' => $data['address'] ?? null,
+                'gender' => $data['gender'],
                 'password' => Hash::make($data['password']),
             ]);
 
@@ -214,6 +217,7 @@ class AuthController extends Controller
                     'name' => $boarder->name,
                     'email' => $boarder->email,
                     'phone' => $boarder->phone ?? null,
+                    'gender' => $boarder->gender,
                     'type' => 'boarder'
                 ]
             ], 201, [], JSON_UNESCAPED_SLASHES);
@@ -363,6 +367,7 @@ class AuthController extends Controller
                 'name' => $boarder->name,
                 'email' => $boarder->email,
                 'phone' => $boarder->phone ?? null,
+                'gender' => $boarder->gender,
                 'type' => 'boarder'
             ];
         }

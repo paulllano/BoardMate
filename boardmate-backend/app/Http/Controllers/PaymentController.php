@@ -8,6 +8,7 @@ use App\Models\Boarder;
 use App\Models\Contract;
 use App\Models\BoardingHouse;
 use App\Models\Admin;
+use App\Models\CreditTransaction;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
 use Illuminate\Http\Request;
@@ -24,11 +25,26 @@ class PaymentController extends Controller
         
         if ($isBoarder && $user) {
             // Filter payments for the logged-in boarder
+            // Include both regular payments (with contracts) and advance payments (with applications)
             $boarderId = $user->id;
-            $payments = Payment::whereHas('contract', function($q) use ($boarderId) {
-                    $q->where('boarder_id', $boarderId);
+            
+            $payments = Payment::where(function($query) use ($boarderId) {
+                    // Regular payments (with contracts)
+                    $query->where(function($q) use ($boarderId) {
+                        $q->whereHas('contract', function($contractQuery) use ($boarderId) {
+                            $contractQuery->where('boarder_id', $boarderId);
+                        })
+                        ->where('is_advance_payment', false);
+                    })
+                    // Advance payments (linked to applications)
+                    ->orWhere(function($q) use ($boarderId) {
+                        $q->where('is_advance_payment', true)
+                          ->whereHas('application', function($appQuery) use ($boarderId) {
+                              $appQuery->where('boarder_id', $boarderId);
+                          });
+                    });
                 })
-                ->with(['boarder', 'contract'])
+                ->with(['boarder', 'contract', 'application.boarder', 'application.boardingHouse', 'creditTransactions'])
                 ->latest()
                 ->paginate(10);
             
@@ -39,13 +55,28 @@ class PaymentController extends Controller
                 ->get();
         } elseif ($user && $user instanceof Admin) {
             // Admin - filter payments by contracts in their boarding houses
+            // Also include advance payments linked to applications in their boarding houses
             // Exclude payments marked as deleted_by_admin
             $adminBoardingHouseIds = BoardingHouse::where('admin_id', $user->id)->pluck('id');
-            $payments = Payment::whereHas('contract', function($q) use ($adminBoardingHouseIds) {
-                    $q->whereIn('boarding_house_id', $adminBoardingHouseIds);
+            
+            $payments = Payment::where('deleted_by_admin', false)
+                ->where(function($query) use ($adminBoardingHouseIds) {
+                    // Regular payments (with contracts)
+                    $query->where(function($q) use ($adminBoardingHouseIds) {
+                        $q->whereHas('contract', function($contractQuery) use ($adminBoardingHouseIds) {
+                            $contractQuery->whereIn('boarding_house_id', $adminBoardingHouseIds);
+                        })
+                        ->where('is_advance_payment', false);
+                    })
+                    // Advance payments (linked to applications)
+                    ->orWhere(function($q) use ($adminBoardingHouseIds) {
+                        $q->where('is_advance_payment', true)
+                          ->whereHas('application', function($appQuery) use ($adminBoardingHouseIds) {
+                              $appQuery->whereIn('boarding_house_id', $adminBoardingHouseIds);
+                          });
+                    });
                 })
-                ->where('deleted_by_admin', false) // Exclude payments deleted by admin
-                ->with(['boarder', 'contract'])
+                ->with(['boarder', 'contract', 'application.boarder', 'application.boardingHouse', 'creditTransactions'])
                 ->latest()
                 ->paginate(10);
             $contracts = collect(); // Empty collection for admins
@@ -121,6 +152,66 @@ class PaymentController extends Controller
             }
         }
         
+        // Handle advance payment credit application using new credit_transactions system
+        $creditApplied = 0;
+        $useCredit = $request->input('use_credit', false);
+        $amountToPay = $request->input('amount_to_pay', null); // New simplified field from frontend
+        
+        if ($useCredit && !empty($data['contract_id'])) {
+            $contract = Contract::findOrFail($data['contract_id']);
+            
+            // Get available credit dynamically
+            $availableCredit = $contract->advance_payment_credit;
+            
+            if ($availableCredit > 0) {
+                // If frontend sent amount_to_pay, use it; otherwise use original amount logic
+                if ($amountToPay !== null) {
+                    // Frontend calculated: amount_to_pay = originalAmount - credit
+                    // We need to reverse this: originalAmount = amount_to_pay + credit
+                    $originalAmount = floatval($amountToPay) + $availableCredit;
+                    $creditApplied = min($availableCredit, $originalAmount);
+                    // Store original amount in amount field, and actual amount paid separately
+                    $data['original_amount'] = $originalAmount;
+                    $data['credit_applied'] = $creditApplied;
+                    $data['amount'] = $originalAmount; // Store original amount
+                } else {
+                    // Legacy: frontend sent original amount
+                    $originalAmount = floatval($data['amount']);
+                    $creditApplied = min($availableCredit, $originalAmount);
+                    // Store original amount and credit applied
+                    $data['original_amount'] = $originalAmount;
+                    $data['credit_applied'] = $creditApplied;
+                    // Keep amount as original amount (not reduced)
+                    $data['amount'] = $originalAmount;
+                }
+                
+                // Get the advance payment record
+                $advancePayment = $contract->getAdvancePayment();
+                
+                if ($advancePayment && $creditApplied > 0) {
+                    // Create credit transaction record for audit trail
+                    CreditTransaction::create([
+                        'contract_id' => $contract->id,
+                        'payment_id' => null, // Will be set after payment is created
+                        'advance_payment_id' => $advancePayment->id,
+                        'credit_amount_used' => $creditApplied,
+                        'used_at' => now(),
+                        'notes' => 'Credit applied to payment'
+                    ]);
+                    
+                    // Mark advance payment as used if fully applied
+                    // Check globally across all contracts, not just this contract
+                    $totalCreditUsed = CreditTransaction::where('advance_payment_id', $advancePayment->id)
+                        ->where('credit_amount_used', '>', 0) // Only count positive amounts
+                        ->sum('credit_amount_used');
+                    
+                    if ($totalCreditUsed >= $advancePayment->amount) {
+                        $advancePayment->update(['used_as_credit' => true]);
+                    }
+                }
+            }
+        }
+        
         // Auto-generate reference number if not provided
         if (empty($data['reference_number']) && !empty($data['payment_method'])) {
             if ($data['payment_method'] === 'GCash') {
@@ -134,6 +225,19 @@ class PaymentController extends Controller
         
         $payment = Payment::create($data);
         
+        // Link credit transaction to payment if credit was applied
+        if ($creditApplied > 0 && $useCredit && !empty($data['contract_id'])) {
+            $contract = Contract::findOrFail($data['contract_id']);
+            $latestCreditTransaction = $contract->creditTransactions()
+                ->whereNull('payment_id')
+                ->latest()
+                ->first();
+            
+            if ($latestCreditTransaction) {
+                $latestCreditTransaction->update(['payment_id' => $payment->id]);
+            }
+        }
+        
         // Update contract status if payment is completed (admin-created payments)
         if ($payment->status === 'completed' && $payment->contract) {
             $contract = $payment->contract;
@@ -144,9 +248,17 @@ class PaymentController extends Controller
             }
             
             // Calculate total completed payments for this contract
-            $totalPaid = Payment::where('contract_id', $contract->id)
+            // Use original_amount if available (for payments with credit), otherwise use amount
+            $payments = Payment::where('contract_id', $contract->id)
                 ->where('status', 'completed')
-                ->sum('amount');
+                ->get();
+            
+            $totalPaid = $payments->sum(function($payment) {
+                // Use original_amount if it exists and is greater than 0, otherwise use amount
+                return $payment->original_amount && $payment->original_amount > 0 
+                    ? $payment->original_amount 
+                    : $payment->amount;
+            });
             
             // Check if full payment has been made
             if ($totalPaid >= $contract->rent_amount) {
@@ -160,11 +272,16 @@ class PaymentController extends Controller
         
         $message = ($user && !($user instanceof Admin)) ? 'Payment submitted successfully. It will be reviewed by the admin.' : 'Payment created successfully.';
         
+        if ($creditApplied > 0) {
+            $message .= ' Advance payment credit of ₱' . number_format($creditApplied, 2) . ' has been applied to this payment.';
+        }
+        
         return response()->json([
             'success' => true,
             'message' => $message,
             'payment' => $payment->load(['boarder', 'contract']),
-            'contract_updated' => ($payment->status === 'completed' && $payment->contract) ? $payment->contract->status : null
+            'contract_updated' => ($payment->status === 'completed' && $payment->contract) ? $payment->contract->status : null,
+            'credit_applied' => $creditApplied
         ], 201);
     }
 
@@ -358,9 +475,17 @@ class PaymentController extends Controller
             }
             
             // Calculate total approved payments for this contract
-            $totalPaid = Payment::where('contract_id', $contract->id)
+            // Use original_amount if available (for payments with credit), otherwise use amount
+            $payments = Payment::where('contract_id', $contract->id)
                 ->where('status', 'completed')
-                ->sum('amount');
+                ->get();
+            
+            $totalPaid = $payments->sum(function($p) {
+                // Use original_amount if it exists and is greater than 0, otherwise use amount
+                return $p->original_amount && $p->original_amount > 0 
+                    ? $p->original_amount 
+                    : $p->amount;
+            });
             
             // Check if full payment has been made
             if ($payment->payment_type === 'full' && $totalPaid >= $contract->rent_amount) {

@@ -88,12 +88,37 @@ class ContractController extends Controller
             }
         }
         
-        $contract = Contract::create($request->validated());
+        $data = $request->validated();
+        
+        // Check for approved application with advance payment for this boarder and boarding house
+        $approvedApplication = \App\Models\Application::where('boarder_id', $data['boarder_id'])
+            ->where('boarding_house_id', $data['boarding_house_id'])
+            ->where('status', 'approved')
+            ->whereNotNull('advance_payment_id')
+            ->with('advancePayment')
+            ->first();
+        
+        // Remove advance_payment_credit from data if present (shouldn't be in fillable anymore)
+        unset($data['advance_payment_credit']);
+        
+        $contract = Contract::create($data);
+        
+        // Load contract with calculated credit (this calculates available credit dynamically)
+        $contract->load(['boarder', 'boardingHouse']);
+        
+        // Get the actual available credit (after deducting what's already been used)
+        $availableCredit = $contract->advance_payment_credit;
+        
+        $message = 'Contract created successfully.';
+        if ($availableCredit > 0) {
+            $message .= ' Advance payment credit of ₱' . number_format($availableCredit, 2) . ' is available for this contract.';
+        }
         
         return response()->json([
             'success' => true,
-            'message' => 'Contract created successfully.',
-            'contract' => $contract->load(['boarder', 'boardingHouse'])
+            'message' => $message,
+            'contract' => $contract,
+            'advance_payment_credit' => $availableCredit // Calculated dynamically (shows remaining balance)
         ], 201);
     }
 
@@ -204,6 +229,37 @@ class ContractController extends Controller
         }
         
         try {
+            // Handle refund of unused advance payment credit
+            $refundMessage = '';
+            $refundAmount = 0;
+            $advancePayment = $contract->getAdvancePayment();
+            
+            if ($advancePayment) {
+                // Calculate unused credit
+                $availableCredit = $contract->advance_payment_credit;
+                
+                if ($availableCredit > 0) {
+                    $refundAmount = $availableCredit;
+                    
+                    // Mark advance payment as refunded
+                    $advancePayment->update([
+                        'status' => 'refunded'
+                    ]);
+                    
+                    // Create a refund transaction record
+                    \App\Models\CreditTransaction::create([
+                        'contract_id' => $contract->id,
+                        'payment_id' => null,
+                        'advance_payment_id' => $advancePayment->id,
+                        'credit_amount_used' => -$refundAmount, // Negative to indicate refund
+                        'used_at' => now(),
+                        'notes' => 'Refunded unused credit due to contract cancellation'
+                    ]);
+                    
+                    $refundMessage = ' Unused advance payment credit of ₱' . number_format($refundAmount, 2) . ' has been automatically refunded.';
+                }
+            }
+            
             // First, archive all related payments before deleting the contract
             $payments = Payment::where('contract_id', $contract->id)->get();
             foreach ($payments as $payment) {
@@ -248,9 +304,13 @@ class ContractController extends Controller
         // Now delete the original contract (this will cascade delete payments, but we've already archived them)
         $contract->delete();
         
+        $message = 'Contract deleted successfully.' . $refundMessage;
+        
         return response()->json([
             'success' => true,
-            'message' => 'Contract deleted successfully.'
+            'message' => $message,
+            'refunded' => $refundAmount > 0,
+            'refund_amount' => $refundAmount
         ]);
     }
 

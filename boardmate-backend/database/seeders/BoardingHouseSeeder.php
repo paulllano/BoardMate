@@ -25,6 +25,9 @@ class BoardingHouseSeeder extends Seeder
                 'name' => \Illuminate\Support\Str::title(fake()->words(2, true)) . ' Boarding House',
                 'address' => fake()->streetAddress() . ', ' . fake()->city() . ', ' . fake()->state() . ' ' . fake()->postcode(),
                 'description' => fake()->paragraph(2),
+                'gender_preference' => fake()->randomElement(['male', 'female', 'everyone']),
+                'advance_payment_amount' => fake()->randomElement([1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]),
+                'policies' => fake()->paragraphs(3, true) . "\n\n" . fake()->paragraphs(2, true),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

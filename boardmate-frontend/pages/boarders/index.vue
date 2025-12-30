@@ -12,7 +12,7 @@
         to="/boarders/create"
         class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center hover:-translate-y-0.5 hover:shadow-lg"
       >
-        <i class="fas fa-plus mr-2"></i>Add New Boarder
+        <i class="fas fa-user-plus mr-2"></i>Add New Boarder
       </NuxtLink>
     </div>
 
@@ -93,7 +93,7 @@
           to="/boarders/create"
           class="bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-md transition-all duration-200 inline-flex items-center"
         >
-          <i class="fas fa-plus mr-2"></i>Add First Boarder
+          <i class="fas fa-user-plus mr-2"></i>Add First Boarder
         </NuxtLink>
       </div>
     </div>

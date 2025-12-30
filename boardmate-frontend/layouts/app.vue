@@ -18,9 +18,9 @@
         >
           <img 
             src="/logo.png" 
-            alt="BoardMate Logo" 
+            alt="BoardMate Logo"
             class="mr-3"
-            style="width: 3rem; height: 3rem; object-contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"
+            style="width: 3rem; height: 3rem; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"
           />
           <NuxtLink :to="isAdmin ? '/dashboard/admin' : (isBoarder ? '/dashboard/boarder' : '/dashboard/admin')" class="text-2xl font-extrabold text-white no-underline" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             BoardMate

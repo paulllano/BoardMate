@@ -23,11 +23,13 @@ class StorePaymentRequest extends FormRequest
     {
         $rules = [
             'contract_id' => 'required|exists:contracts,id',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'nullable|numeric|min:0', // Made nullable to support amount_to_pay
+            'amount_to_pay' => 'nullable|numeric|min:0', // New simplified field
             'payment_date' => 'required|date',
-            'payment_method' => 'required|in:Cash,GCash',
+            'payment_method' => 'nullable|in:Cash,GCash', // Made nullable (optional when credit covers full amount)
             'reference_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
+            'use_credit' => 'nullable|boolean',
         ];
         
         // Check user type using Sanctum

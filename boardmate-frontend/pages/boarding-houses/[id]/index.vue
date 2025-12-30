@@ -8,9 +8,34 @@
     <div v-else-if="house">
       <!-- Header -->
       <div class="flex justify-between items-center mb-4">
-        <h1 class="text-xl font-semibold mb-0">
-          <i class="fas fa-building mr-2"></i>{{ house.name || 'Boarding House Details' }}
-        </h1>
+        <div class="flex items-center gap-3">
+          <h1 class="text-xl font-semibold mb-0">
+            <i class="fas fa-building mr-2"></i>{{ house.name || 'Boarding House Details' }}
+          </h1>
+          <span 
+            v-if="house.gender_preference"
+            :class="{
+              'bg-blue-100 text-blue-800': house.gender_preference === 'male',
+              'bg-pink-100 text-pink-800': house.gender_preference === 'female',
+              'bg-purple-100 text-purple-800': house.gender_preference === 'everyone'
+            }"
+            class="text-xs font-semibold px-3 py-1.5 rounded-full flex items-center"
+          >
+            <i 
+              v-if="house.gender_preference === 'male'" 
+              class="fas fa-mars mr-1.5"
+            ></i>
+            <i 
+              v-else-if="house.gender_preference === 'female'" 
+              class="fas fa-venus mr-1.5"
+            ></i>
+            <i 
+              v-else 
+              class="fas fa-venus-mars mr-1.5"
+            ></i>
+            {{ house.gender_preference === 'male' ? 'Male Only' : house.gender_preference === 'female' ? 'Female Only' : 'Everyone' }}
+          </span>
+        </div>
         <div class="flex items-center gap-2">
           <button
             v-if="isBoarder && canApply"
@@ -279,8 +304,91 @@
             </div>
           </div>
 
+          <!-- Advance Payment Section -->
+          <div v-if="house && house.advance_payment_amount > 0" class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <h6 class="text-sm font-semibold text-gray-700 mb-3">
+              <i class="fas fa-money-bill-wave mr-2 text-blue-600"></i>
+              Advance Payment Required
+            </h6>
+            <div class="mb-4">
+              <p class="text-gray-700 mb-3">
+                <strong>Amount:</strong> <span class="text-lg font-bold text-blue-600">₱{{ formatCurrency(house.advance_payment_amount) }}</span>
+              </p>
+              <p class="text-sm text-gray-600 mb-3">
+                This advance payment serves as a reservation fee and will be used as credit toward your first month's rent when your contract is created.
+              </p>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-credit-card mr-2 text-blue-600"></i>
+                    Payment Method <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    v-model="applicationForm.advance_payment_method"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">Select payment method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="GCash">GCash</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-hashtag mr-2 text-blue-600"></i>
+                    Reference Number
+                    <span v-if="applicationForm.advance_payment_method === 'GCash'" class="text-red-500">*</span>
+                  </label>
+                  <input
+                    v-model="applicationForm.advance_payment_reference"
+                    type="text"
+                    :required="applicationForm.advance_payment_method === 'GCash'"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter reference number"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">
+                    <span v-if="applicationForm.advance_payment_method === 'GCash'">Required for GCash payments</span>
+                    <span v-else>Optional for Cash payments</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Policies Section -->
+          <div v-if="house" class="border-2 border-gray-300 rounded-lg p-4">
+            <h6 class="text-sm font-semibold text-gray-700 mb-3">
+              <i class="fas fa-file-contract mr-2 text-green-600"></i>
+              House Policies & Terms <span class="text-red-500">*</span>
+            </h6>
+            <div v-if="house.policies" class="bg-gray-50 border border-gray-200 rounded p-4 max-h-64 overflow-y-auto mb-4">
+              <pre class="text-sm text-gray-700 whitespace-pre-wrap font-sans">{{ house.policies }}</pre>
+            </div>
+            <div v-else class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4">
+              <p class="text-sm text-yellow-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                No specific policies have been set for this boarding house. By submitting this application, you agree to follow standard boarding house rules and regulations.
+              </p>
+            </div>
+            <div class="flex items-start">
+              <input
+                id="policies_accepted"
+                v-model="applicationForm.policies_accepted"
+                type="checkbox"
+                required
+                class="mt-1 mr-2 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <label for="policies_accepted" class="text-sm text-gray-700">
+                I have read and accept the policies and terms & conditions stated above. <span class="text-red-500">*</span>
+              </label>
+            </div>
+          </div>
+
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-comment mr-2 text-green-600"></i>
               Message to Property Owner (Optional)
             </label>
             <textarea
@@ -296,6 +404,9 @@
 
           <div class="bg-blue-50 border-l-4 border-blue-400 text-blue-700 px-4 py-3 rounded text-sm">
             <strong>Note:</strong> Your application will be reviewed by the property owner. You will be notified of the decision.
+            <span v-if="house && house.advance_payment_amount > 0" class="block mt-1">
+              If your application is rejected, your advance payment will be automatically refunded.
+            </span>
           </div>
         </form>
       </template>
@@ -311,7 +422,7 @@
         <button
           type="button"
           @click="handleApply"
-          :disabled="applying"
+          :disabled="applying || !applicationForm.policies_accepted || (house && house.advance_payment_amount > 0 && !applicationForm.advance_payment_method)"
           class="bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 disabled:opacity-50 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-200 flex items-center"
         >
           <i v-if="!applying" class="fas fa-paper-plane mr-2"></i>
@@ -401,7 +512,11 @@ const showSuccessModal = ref(false)
 const applying = ref(false)
 const applyError = ref('')
 const applicationForm = ref({
-  message: ''
+  message: '',
+  advance_payment_method: '',
+  advance_payment_reference: '',
+  advance_payment_amount: 0,
+  policies_accepted: false
 })
 
 // Check if user is boarder
@@ -478,8 +593,22 @@ const houseAdmin = computed(() => {
 watch([reviews, boarders, house], () => {
   if (house.value) {
     fetchStatistics()
+    // Update advance payment amount in form when house data is loaded
+    if (house.value.advance_payment_amount) {
+      applicationForm.value.advance_payment_amount = house.value.advance_payment_amount
+    }
   }
 }, { deep: true })
+
+// Watch for modal opening to ensure form is updated
+watch(showApplyModal, (isOpen) => {
+  if (isOpen && house.value) {
+    // Update advance payment amount when modal opens
+    if (house.value.advance_payment_amount) {
+      applicationForm.value.advance_payment_amount = house.value.advance_payment_amount
+    }
+  }
+})
 
 onMounted(async () => {
   await auth.checkAuth()
@@ -544,10 +673,18 @@ const fetchHouse = async () => {
         description: houseData.description ?? null,
         admin_id: houseData.admin_id ?? null,
         admin: houseData.admin ?? null,
+        gender_preference: houseData.gender_preference ?? null,
+        advance_payment_amount: houseData.advance_payment_amount ?? 0,
+        policies: houseData.policies ?? null,
         boarders: Array.isArray(houseData.boarders) ? houseData.boarders : [],
         reviews: Array.isArray(houseData.reviews) ? houseData.reviews : [],
         contracts: Array.isArray(houseData.contracts) ? houseData.contracts : [],
         services: Array.isArray(houseData.services) ? houseData.services : []
+      }
+      
+      // Set advance payment amount in form when modal opens
+      if (house.value.advance_payment_amount) {
+        applicationForm.value.advance_payment_amount = house.value.advance_payment_amount
       }
       
       // If boarders are already loaded in the response, use them
@@ -673,14 +810,42 @@ const handleApply = async () => {
     return
   }
   
+  // Validate advance payment if required
+  if (house.value && house.value.advance_payment_amount > 0) {
+    if (!applicationForm.value.advance_payment_method) {
+      applyError.value = 'Please select a payment method for the advance payment.'
+      return
+    }
+    if (applicationForm.value.advance_payment_method === 'GCash' && !applicationForm.value.advance_payment_reference) {
+      applyError.value = 'Please enter a reference number for GCash payment.'
+      return
+    }
+  }
+  
+  // Validate policies acceptance
+  if (!applicationForm.value.policies_accepted) {
+    applyError.value = 'You must accept the policies and terms & conditions to submit your application.'
+    return
+  }
+  
   applying.value = true
   applyError.value = ''
   
   try {
-    const response = await api.post('/applications', {
+    const payload = {
       boarding_house_id: house.value.id,
-      message: applicationForm.value.message || ''
-    })
+      message: applicationForm.value.message || '',
+      policies_accepted: applicationForm.value.policies_accepted
+    }
+    
+    // Add advance payment info if required
+    if (house.value && house.value.advance_payment_amount > 0) {
+      payload.advance_payment_method = applicationForm.value.advance_payment_method
+      payload.advance_payment_reference = applicationForm.value.advance_payment_reference || null
+      payload.advance_payment_amount = house.value.advance_payment_amount
+    }
+    
+    const response = await api.post('/applications', payload)
     
     console.log('Application submitted:', response)
     
@@ -688,14 +853,17 @@ const handleApply = async () => {
     if (response && (response.success || response.data)) {
       // Close apply modal and reset form
       showApplyModal.value = false
-      applicationForm.value.message = ''
+      applicationForm.value = {
+        message: '',
+        advance_payment_method: '',
+        advance_payment_reference: '',
+        advance_payment_amount: 0,
+        policies_accepted: false
+      }
       applyError.value = ''
       
       // Show success modal
       showSuccessModal.value = true
-      
-      // Refresh user applications to update the UI
-      await fetchUserApplicationsAndContracts()
     } else {
       applyError.value = 'Application submitted but no confirmation received.'
     }

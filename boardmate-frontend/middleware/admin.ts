@@ -10,7 +10,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   await nextTick()
   
   // Get user (handle both ref and direct access)
-  const user = auth.user?.value || auth.user
+  // useAuth returns user as readonly ref, so access via .value
+  let user = auth.user?.value || auth.user
+  
+  // If user is not loaded yet, try fetching again
+  if (!user) {
+    await auth.fetchUser()
+    await nextTick()
+    user = auth.user?.value || auth.user
+  }
   
   // Check if user is authenticated
   if (!user) {
@@ -18,14 +26,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return navigateTo('/auth/role')
   }
   
-  // Check if user is admin
-  if (user?.type !== 'admin') {
+  // Check if user is admin - explicitly check the type field
+  const userType = user?.type
+  
+  if (userType !== 'admin') {
     // Redirect to appropriate dashboard based on user type
-    if (user?.type === 'boarder') {
+    if (userType === 'boarder') {
       return navigateTo('/dashboard/boarder')
     } else {
-      return navigateTo('/dashboard/admin')
+      // If user type is unknown or null, redirect to role selection
+      return navigateTo('/auth/role')
     }
   }
+  
+  // User is admin, allow access
 })
 

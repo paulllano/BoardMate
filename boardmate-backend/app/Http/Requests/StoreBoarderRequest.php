@@ -29,6 +29,7 @@ class StoreBoarderRequest extends FormRequest
             'age' => 'required|integer|min:18|max:100',
             'address' => 'nullable|string|max:500',
             'date_of_birth' => 'nullable|date',
+            'gender' => 'required|in:male,female,other',
         ];
     }
 }

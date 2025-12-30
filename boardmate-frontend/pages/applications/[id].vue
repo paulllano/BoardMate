@@ -148,6 +148,86 @@
         </div>
       </div>
 
+      <!-- Advance Payment Info -->
+      <div v-if="application.advance_payment || application.advancePayment" class="bg-white rounded-xl shadow-md border-0 p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">
+          <i class="fas fa-money-bill-wave mr-2" :class="isAdmin ? 'text-blue-600' : 'text-green-600'"></i>
+          Advance Payment
+        </h2>
+        <div class="space-y-3">
+          <div v-if="application.advance_payment || application.advancePayment">
+            <div class="text-sm text-gray-500">Amount</div>
+            <div class="font-semibold text-lg text-gray-900">
+              ₱{{ formatCurrency((application.advance_payment || application.advancePayment)?.amount) }}
+            </div>
+          </div>
+          <div v-if="application.advance_payment || application.advancePayment">
+            <div class="text-sm text-gray-500">Status</div>
+            <span 
+              :class="{
+                'bg-green-100 text-green-800': (application.advance_payment || application.advancePayment)?.status === 'completed',
+                'bg-red-100 text-red-800': (application.advance_payment || application.advancePayment)?.status === 'refunded',
+                'bg-yellow-100 text-yellow-800': (application.advance_payment || application.advancePayment)?.status === 'pending'
+              }"
+              class="px-3 py-1 rounded-full text-sm font-semibold"
+            >
+              {{ (application.advance_payment || application.advancePayment)?.status === 'completed' ? 'Paid' : 
+                 (application.advance_payment || application.advancePayment)?.status === 'refunded' ? 'Refunded' : 'Pending' }}
+            </span>
+          </div>
+          <div v-if="application.advance_payment || application.advancePayment">
+            <div class="text-sm text-gray-500">Payment Method</div>
+            <div class="text-gray-700">{{ (application.advance_payment || application.advancePayment)?.method || 'N/A' }}</div>
+          </div>
+          <div v-if="(application.advance_payment || application.advancePayment)?.reference_number">
+            <div class="text-sm text-gray-500">Reference Number</div>
+            <div class="text-gray-700 font-mono">{{ (application.advance_payment || application.advancePayment)?.reference_number }}</div>
+          </div>
+          <div v-if="application.status === 'rejected' && (application.advance_payment || application.advancePayment)?.status === 'refunded'" 
+               class="mt-4 p-4 bg-green-50 border-l-4 border-green-500 rounded">
+            <div class="flex items-start">
+              <i class="fas fa-check-circle text-green-600 mr-2 mt-0.5"></i>
+              <div>
+                <strong class="text-green-800">Refund Processed</strong>
+                <p class="text-green-700 text-sm mt-1">
+                  Advance payment has been automatically refunded due to application rejection.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Policies Acceptance -->
+      <div v-if="application.policies_text" class="bg-white rounded-xl shadow-md border-0 p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">
+          <i class="fas fa-file-contract mr-2" :class="isAdmin ? 'text-blue-600' : 'text-green-600'"></i>
+          Policies & Terms
+        </h2>
+        <div class="mb-4">
+          <div class="flex items-center mb-2">
+            <span class="text-sm font-semibold text-gray-700 mr-2">Accepted:</span>
+            <span 
+              :class="application.policies_accepted ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+              class="px-3 py-1 rounded-full text-sm font-semibold"
+            >
+              <i :class="application.policies_accepted ? 'fas fa-check-circle mr-1' : 'fas fa-times-circle mr-1'"></i>
+              {{ application.policies_accepted ? 'Yes' : 'No' }}
+            </span>
+            <span v-if="application.policies_accepted_at" class="text-sm text-gray-500 ml-2">
+              on {{ formatDate(application.policies_accepted_at) }}
+            </span>
+          </div>
+        </div>
+        <div class="bg-gray-50 border border-gray-200 rounded p-4 max-h-64 overflow-y-auto">
+          <pre class="text-sm text-gray-700 whitespace-pre-wrap font-sans">{{ application.policies_text }}</pre>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">
+          <i class="fas fa-info-circle mr-1"></i>
+          This is the policy text that was shown and accepted at the time of application.
+        </p>
+      </div>
+
       <!-- Message -->
       <div v-if="application.message" class="bg-white rounded-xl shadow-md border-0 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Message from Applicant</h2>
@@ -396,6 +476,12 @@ const handleReject = async (reason) => {
     
     successTitle.value = 'Application Rejected'
     successMessage.value = 'Application rejected successfully.'
+    
+    // Add refund message if advance payment was refunded
+    if (response.refunded && response.refund_amount) {
+      successMessage.value += ` Advance payment of ₱${formatCurrency(response.refund_amount)} has been automatically refunded.`
+    }
+    
     showSuccessModal.value = true
     
     // Auto-close modal after 2 seconds
@@ -418,6 +504,11 @@ const getStatusClass = (status) => {
     rejected: 'bg-red-100 text-red-800'
   }
   return classes[status.toLowerCase()] || 'bg-gray-100 text-gray-800'
+}
+
+const formatCurrency = (amount) => {
+  if (!amount) return '0.00'
+  return parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 const formatDate = (dateString) => {
